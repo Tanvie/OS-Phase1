@@ -2,14 +2,17 @@
 using namespace std;
 ifstream fin;
 ofstream fout;
-void INIT(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
+//int toggle = 0;
+void INIT(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
 {
     cout << __LINE__ << "\t";
     for (int i = 0; i < 100; i++)
+    {
         for (int j = 0; j < 4; j++)
         {
             M[i][j] = '\0';
         }
+    }
     for (int i = 0; i < 4; i++)
     {
         IR[i] = '\0';
@@ -18,6 +21,7 @@ void INIT(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
     IC = 0;
     SI = 0;
     C = 0;
+    // toggle = 0;
     cout << __LINE__ << "\t";
 }
 
@@ -57,7 +61,8 @@ void putData(char M[100][4], char *IR)
     int a0 = IR[3] - '0';
     int mem = a1 * 10 + a0;
 
-    char ch, buffer[4];
+    char ch, *buffer;
+    buffer = (char *)malloc(sizeof(char) * 4);
     int index = 0, flag = 0;
 
     for (int i = 0; i < 10; i++)
@@ -124,7 +129,7 @@ void compare(char M[100][4], char *IR, char *R, int &C)
     int a1 = IR[2] - '0';
     int a0 = IR[3] - '0';
     int mem = a1 * 10 + a0;
-    char *operand2;
+    char operand2[4];
     int result;
     operand2[0] = M[mem][0];
     operand2[1] = M[mem][1];
@@ -144,6 +149,21 @@ void compare(char M[100][4], char *IR, char *R, int &C)
     cout << "\nIN C VAL COMPARE FOR DEBUG " << result << endl;
     cout << __LINE__ << "\t";
     C = result;
+    //toggle = result;
+}
+
+void branch(char *IR, int &IC, int &C)
+{
+    if (C)
+    {
+        //C is true then branch  the prog flow
+        int a1 = IR[2] - '0';
+        int a0 = IR[3] - '0';
+        int mem = a1 * 10 + a0;
+
+        IC = mem;
+        C = 0;
+    }
 }
 void MOS(char M[100][4], char *IR, int &SI, int &terminate)
 {
@@ -171,7 +191,7 @@ void MOS(char M[100][4], char *IR, int &SI, int &terminate)
     SI = 0;
 }
 
-void EXECUTEUSERPROGRAM(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
+void EXECUTEUSERPROGRAM(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
 {
     cout << __LINE__ << "\t";
     IC = 0;
@@ -179,8 +199,6 @@ void EXECUTEUSERPROGRAM(char M[100][4], char *IR, char *R, int &C, int &IC, int 
     // *(SI) = 0;
     SI = 0;
     int terminate = 0;
-    int values[5];
-
     cout << __LINE__ << "\t";
     while (!terminate)
     {
@@ -191,7 +209,6 @@ void EXECUTEUSERPROGRAM(char M[100][4], char *IR, char *R, int &C, int &IC, int 
         IR[2] = M[IC][2];
         IR[3] = M[IC][3];
         IC++;
-        //cout<<__LINE__<<"\t";
         cout << __LINE__ << "\t";
         cout << IR[0] << IR[1] << IR[2] << IR[3] << endl;
         cout << __LINE__ << "\t";
@@ -235,30 +252,30 @@ void EXECUTEUSERPROGRAM(char M[100][4], char *IR, char *R, int &C, int &IC, int 
         {
             cout << __LINE__ << "\t";
             compare(M, IR, R, C);
-            cout << __LINE__ << "\t";
-            //cout << "\n238 IN COMPARE FOR DEBUG " << C << endl;
-            cout << __LINE__ << "\t";
+            // cout << __LINE__ << "\t";
+            // cout << "\n238 IN COMPARE FOR DEBUG " << toggle << endl;
+            // cout << __LINE__ << "\t";
         }
         else if (IR[0] == 'B')
         {
             cout << __LINE__ << "\t";
             //branch if true
-            cout << "\nBRANCH INSTRUCTION!!!";
-            exit(1);
+            branch(IR, IC, C);
         }
+        cout << __LINE__ << "\t";
     }
 }
-void STARTEXECUTION(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
+void STARTEXECUTION(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
 {
     cout << __LINE__ << "\t";
     IC = 0;
-    EXECUTEUSERPROGRAM(M, IR, R, C, IC, SI);
+    EXECUTEUSERPROGRAM(M, IR, R, IC, SI, C);
     cout << __LINE__ << "\t";
 }
-void LOAD(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
+void LOAD(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
 {
     int instC, pcCount;
-    int m = 0;
+    int m;
     string line;
     cout << __LINE__ << "\t";
     while (!fin.eof())
@@ -267,9 +284,13 @@ void LOAD(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
         getline(fin, line);
         if (!(line.find("$AMJ") == string::npos))
         {
+            m = 0;
             cout << __LINE__ << "\t";
             instC = stoi(line.substr(8, 4));
-            pcCount = (instC / 10) + 1;
+            if (instC % 10 == 0)
+                pcCount = instC / 10;
+            else
+                pcCount = (instC / 10) + 1;
             for (int i = 0; i < pcCount; i++)
             {
                 cout << __LINE__ << "\t";
@@ -288,10 +309,14 @@ void LOAD(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
         else if (!(line.find("$DTA") == string::npos))
         {
             cout << __LINE__ << "\t";
-            STARTEXECUTION(M, IR, R, C, IC, SI);
+            STARTEXECUTION(M, IR, R, IC, SI, C);
         }
         else if (!(line.find("$END") == string::npos))
-            INIT(M, IR, R, C, IC, SI);
+        {
+            cout << __LINE__ << endl;
+            cout << "END DETECTED" << endl;
+            INIT(M, IR, R, IC, SI, C);
+        }
         cout << __LINE__ << "\t";
         //mem exceed condition
     }
@@ -305,8 +330,8 @@ void LOAD(char M[100][4], char *IR, char *R, int &C, int &IC, int &SI)
 }
 int main()
 {
-    fin.open("input1.txt");
-    fout.open("output1.txt");
+    fin.open("given_input.txt");
+    fout.open("test_output.txt");
     char M[100][4];
     char IR[4];
     char R[4];
@@ -315,12 +340,22 @@ int main()
     int IC = 0;
     int SI = 0;
     cout << __LINE__ << "\t";
-    INIT(M, IR, R, C, IC, SI);
+    INIT(M, IR, R, IC, SI, C);
     cout << __LINE__ << "\t";
-    LOAD(M, IR, R, C, IC, SI);
+    LOAD(M, IR, R, IC, SI, C);
     cout << __LINE__ << "\t";
 
     fin.close();
     fout.close();
     return 0;
 }
+
+// 1
+// 2
+// 3
+// 4
+// 5  BR 8
+// 6
+// 7
+// 8
+// 9
