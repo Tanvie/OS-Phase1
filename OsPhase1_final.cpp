@@ -28,7 +28,7 @@ void INIT(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
         R[i] = '\0';
     }
 
-    // Initialising Instruction counter, toggle reg "C" and source index to zero
+    // Initialising Instruction counter, toggle reg "C" and Interrupt to zero
     IC = 0;
     SI = 0;
     C = 0;
@@ -330,16 +330,22 @@ void LOAD(char M[100][4], char *IR, char *R, int &IC, int &SI, int &C)
 int main()
 {
     // Reading the input file
-    fin.open("given_input.txt");
-    // FOr writing in output file
-    fout.open("test_output.txt");
+    fin.open("input_phase1.txt");
+    // For writing in output file
+    fout.open("output.txt");
 
+    // 2D array for memory
     char M[100][4];
+    // Instruction register
     char IR[4];
+    // General Purpose Register
     char R[4];
 
+    // Toggle
     int C = 0;
+    // Instruction counter
     int IC = 0;
+    // Interuppt
     int SI = 0;
 
     INIT(M, IR, R, IC, SI, C);
